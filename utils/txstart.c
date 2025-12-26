@@ -65,17 +65,18 @@ void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
         strcat(plugin_args, " ");
     }
 
-    sprintf(exec_plugin_cmd, "sh %s/%s.sh %s", path_to_config, cmd_copy,
+    sprintf(exec_plugin_cmd, "sh %s%s.sh %s", path_to_config, cmd_copy,
             plugin_args);
     rc = popen(exec_plugin_cmd, "r");
     if (rc == NULL)
       die("rc error");
 
     while (fgets(output, 4096, rc) != NULL) {
-      printf("%s\n", output);
-      XDrawString(dpy, win, gc, 150,
-                  150 + new_lines_output++ * strhei(font_struct), output,
-                  strlen(output));
+      puts(output);
+      XDrawString(dpy, win, gc, 100,
+                  (window.heigth - strhei(font_struct)) / 2 +
+                      font_struct->ascent,
+                  output, strlen(output));
       XFlush(dpy);
     }
 
@@ -89,6 +90,31 @@ void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
   closedir(dr);
 
   path_to_config[0] = '\0';
+}
+
+void display_programs(Display *dpy, Window win, GC gc,
+                      XFontStruct *font_struct) {
+  struct dirent *de;
+
+  DIR *dr = opendir("/usr/bin/");
+  if (dr == NULL)
+    die("Could not open directory");
+
+  long int x = 10 + strwid(user_input, font_struct) + 5;
+  int n = 0;
+  while ((de = readdir(dr)) != NULL) {
+    if (strncmp(user_input, de->d_name, user_input_length) == 0 &&
+        de->d_type != DT_DIR) {
+      if (n <= 100) {
+        XDrawString(dpy, win, gc, x,
+                    (window.heigth - strhei(font_struct)) / 2 +
+                        font_struct->ascent,
+                    de->d_name, strlen(de->d_name));
+        x += strwid(de->d_name, font_struct) + 5;
+      }
+      n++;
+    }
+  }
 }
 
 void run_program(char *name) {
@@ -125,21 +151,16 @@ int main(int argc, char **argv) {
   attrs.background_pixel = background.extra;
   root = DefaultRootWindow(dpy);
   screen = DefaultScreen(dpy);
-  win = XCreateWindow(dpy, root, (DisplayWidth(dpy, screen) - 600) / 2,
-                      (DisplayHeight(dpy, screen) - 300) / 2, 600, 300, 0,
+  win = XCreateWindow(dpy, root, 0, 0, window.width, window.heigth, 0,
                       DefaultDepth(dpy, screen), CopyFromParent,
                       DefaultVisual(dpy, screen),
                       CWOverrideRedirect | CWBackPixel, &attrs);
+
   gc = XCreateGC(dpy, win, 0, NULL);
   font_struct = XQueryFont(dpy, XGContextFromGC(gc));
 
   XSetForeground(dpy, gc, foreground.extra);
   XSetFillStyle(dpy, gc, FillSolid);
-
-  rect_gc = XCreateGC(dpy, win, 0, NULL);
-  XColor rect_color;
-  XSetForeground(dpy, rect_gc, 0xff0000);
-  XSetFillStyle(dpy, rect_gc, FillSolid);
 
   XStoreName(dpy, win, "txstart");
   XSelectInput(dpy, win, StructureNotifyMask | KeyPressMask | FocusChangeMask);
@@ -152,8 +173,6 @@ int main(int argc, char **argv) {
   }
 
   char *path2conf = txconf(name, "");
-  printf("out: %s\n", path2conf);
-  XFillRectangle(dpy, win, rect_gc, 0, 0, width, 100);
   XFlush(dpy);
   while (1) {
     XEvent event;
@@ -161,7 +180,6 @@ int main(int argc, char **argv) {
 
     switch (event.type) {
     case Expose:
-      XFillRectangle(dpy, win, rect_gc, 0, 0, width, 100);
       XFlush(dpy);
       break;
     case KeyPress:
@@ -175,7 +193,6 @@ int main(int argc, char **argv) {
         user_input_length = 0;
 
         XClearWindow(dpy, win);
-        XFillRectangle(dpy, win, rect_gc, 0, 0, width, 100);
         XFlush(dpy);
 
         break;
@@ -185,22 +202,25 @@ int main(int argc, char **argv) {
         user_input[user_input_length] = (char)keysym;
         user_input[user_input_length + 1] = '\0';
         user_input_length++;
-        printf("%s\n", user_input);
 
         XClearWindow(dpy, win);
-        XFillRectangle(dpy, win, rect_gc, 0, 0, width, 100);
-        XDrawString(dpy, win, gc, input.x, input.y, user_input,
-                    user_input_length);
+        XDrawString(dpy, win, gc, 10,
+                    (window.heigth - strhei(font_struct)) / 2 +
+                        font_struct->ascent,
+                    user_input, user_input_length);
+
+        display_programs(dpy, win, gc, font_struct);
         XFlush(dpy);
       } else if (keysym == XK_BackSpace && user_input_length > 0) {
         user_input[user_input_length - 1] = '\0';
         user_input_length--;
 
         XClearWindow(dpy, win);
-        printf("backspace: %s\n", user_input);
-        XFillRectangle(dpy, win, rect_gc, 0, 0, width, 100);
-        XDrawString(dpy, win, gc, input.x, input.y, user_input,
-                    user_input_length);
+        XDrawString(dpy, win, gc, 10,
+                    (window.heigth - strhei(font_struct)) / 2 +
+                        font_struct->ascent,
+                    user_input, user_input_length);
+        display_programs(dpy, win, gc, font_struct);
         XFlush(dpy);
       } else if (keysym == XK_Return && user_input_length > 0) {
         char cmd_existance_checker[100];
@@ -210,11 +230,6 @@ int main(int argc, char **argv) {
         if (system(cmd_existance_checker)) {
           printf("system: %s\n", user_input);
           run_plugin(dpy, win, gc, font_struct, user_input);
-          printf("DOES NOT EXIST\n");
-          XDrawString(dpy, win, gc, 100, 100, "Does not exist",
-                      strlen("Does not exist"));
-          XFillRectangle(dpy, win, rect_gc, 0, 0, width, 100);
-          XFlush(dpy);
         } else {
           run_program(user_input);
         }
