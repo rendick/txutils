@@ -27,6 +27,7 @@ extern struct Variable foreground;
 extern struct Variable input;
 extern struct Variable input_foreground;
 extern struct Variable square;
+extern struct Variable window;
 
 void die(const char *msg);
 

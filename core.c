@@ -27,6 +27,7 @@ struct Variable foreground;
 struct Variable input;
 struct Variable input_foreground;
 struct Variable square;
+struct Variable window;
 
 void die(char *msg) {
   fprintf(stderr, "%s\n", msg);
@@ -155,6 +156,8 @@ void conf_analyzer(char *util_name) {
           set_values(&input_foreground, arg_n, token);
         } else if (strcmp(option_type, "square") == 0) {
           set_values(&square, arg_n, token);
+        } else if (strcmp(option_type, "window") == 0){
+            set_values(&window, arg_n, token);
         }
 
         arg_n++;
