@@ -13,6 +13,9 @@
 extern uint32_t defbg;
 extern uint32_t deffg;
 
+extern uint32_t window_width;
+extern uint32_t window_height;
+
 extern uint32_t bg_color;
 extern uint32_t fg_color;
 
@@ -44,8 +47,10 @@ void die(const char *msg);
 int strwid(const char *str, XFontStruct *font_struct);
 int strhei(XFontStruct *font_struct);
 
+void verify_conf_args();
+
 char *txconf(char *util_name, char *args);
-char* txname();
+char *txname();
 
 void conf_analyzer(char *util_name);
 

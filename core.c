@@ -13,6 +13,9 @@
 uint32_t defbg = 0x272E33;
 uint32_t deffg = 0x9D9685;
 
+uint32_t window_width;
+uint32_t window_height;
+
 uint32_t bg_color;
 uint32_t fg_color;
 
@@ -50,6 +53,28 @@ int strwid(char *str, XFontStruct *font_struct) {
 
 int strhei(XFontStruct *font_info) {
   return font_info->ascent + font_info->descent;
+}
+
+void verify_conf_args() {
+  (background.extra == 0) ? (bg_color = defbg) : (bg_color = background.extra);
+  (square.extra == 0) ? (square_color = deffg) : (square_color = square.extra);
+
+  if (square.width != 0 && square.heigth != 0) {
+    square_width = square.width;
+    square_height = square.heigth;
+  } else {
+    square_width = 100;
+    square_height = 100;
+  }
+
+  if (window.width != 0 && square.heigth != 0) {
+    window_width = window.width;
+    window_height = window.heigth;
+  } else {
+    Display *dpy = XOpenDisplay(NULL);
+    window_width = 25;
+    window_height = DisplayWidth(dpy, DefaultScreen(dpy));
+  }
 }
 
 char *txconf(char *util_name, char *args) {
