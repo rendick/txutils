@@ -18,11 +18,6 @@
 
 #define INPUT_LENGTH 512
 
-uint32_t bg_color = 0xffffff;
-uint32_t square_color = 0x000000;
-uint16_t square_width = 100;
-uint16_t square_height = 100;
-
 char user_input[INPUT_LENGTH] = {0};
 uint16_t user_input_length = 0;
 
@@ -64,14 +59,7 @@ void purge_sq(Display *dpy, Window win, GC gc) {
 int main(int argc, char **argv) {
   strcpy(name, txname());
   conf_analyzer(txname());
-
-  if (square.width != 0 && square.heigth != 0) {
-    square_width = square.width;
-    square_height = square.heigth;
-  }
-
-  square_color = square.extra;
-
+  verify_conf_args();
   srand(time(NULL));
 
   Display *dpy;
@@ -89,7 +77,7 @@ int main(int argc, char **argv) {
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;
-  attrs.background_pixel = background.extra;
+  attrs.background_pixel = bg_color;
   root = DefaultRootWindow(dpy);
   screen = DefaultScreen(dpy);
   win = XCreateWindow(dpy, root, 0, 0, DisplayWidth(dpy, screen),
@@ -147,12 +135,6 @@ int main(int argc, char **argv) {
         if (verify_passwd(user_input) == 0) {
           XCloseDisplay(dpy);
           return EXIT_SUCCESS;
-        } else {
-          XDrawString(dpy, win, wrong_passwd,
-                      (DisplayWidth(dpy, screen) / 2) -
-                          strwid("WRONG", font_struct),
-                      DisplayHeight(dpy, screen) / 2, "WRONG", strlen("WRONG"));
-          XFlush(dpy);
         }
       }
       break;

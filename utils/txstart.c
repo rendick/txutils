@@ -16,6 +16,7 @@
 
 #define INPUT_LENGTH 512
 
+Display *dpy;
 char user_input[INPUT_LENGTH] = {0};
 uint16_t user_input_length = 0;
 
@@ -136,7 +137,8 @@ void run_program(char *name) {
 int main(int argc, char **argv) {
   strcpy(name, txname());
   conf_analyzer(txname());
-  Display *dpy;
+  verify_conf_args();
+
   Window win, root;
   GC gc, rect_gc;
   XFontStruct *font_struct;
@@ -163,7 +165,9 @@ int main(int argc, char **argv) {
   XSetFillStyle(dpy, gc, FillSolid);
 
   XStoreName(dpy, win, "txstart");
-  XSelectInput(dpy, win, StructureNotifyMask | KeyPressMask | FocusChangeMask);
+  XSelectInput(dpy, win,
+               StructureNotifyMask | ExposureMask | KeyPressMask |
+                   FocusChangeMask);
   XMapWindow(dpy, win);
   XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync, CurrentTime);
 
@@ -180,6 +184,7 @@ int main(int argc, char **argv) {
 
     switch (event.type) {
     case Expose:
+      display_programs(dpy, win, gc, font_struct);
       XFlush(dpy);
       break;
     case KeyPress:
