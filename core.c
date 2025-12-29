@@ -10,6 +10,16 @@
 #define UNIX_USER getenv("USER")
 #define randnum(max, min) ((rand() % ((max) - (min) + 1)) + (min))
 
+uint32_t defbg = 0x272E33;
+uint32_t deffg = 0x9D9685;
+
+uint32_t bg_color;
+uint32_t fg_color;
+
+uint32_t square_color;
+uint16_t square_width;
+uint16_t square_height;
+
 int width = 0, height = 0;
 
 char name[128];
@@ -156,8 +166,8 @@ void conf_analyzer(char *util_name) {
           set_values(&input_foreground, arg_n, token);
         } else if (strcmp(option_type, "square") == 0) {
           set_values(&square, arg_n, token);
-        } else if (strcmp(option_type, "window") == 0){
-            set_values(&window, arg_n, token);
+        } else if (strcmp(option_type, "window") == 0) {
+          set_values(&window, arg_n, token);
         }
 
         arg_n++;

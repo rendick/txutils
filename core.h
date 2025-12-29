@@ -10,6 +10,20 @@
 #define UNIX_USER getenv("USER")
 #define randnum(max, min) ((rand() % ((max) - (min) + 1)) + (min))
 
+extern uint32_t defbg;
+extern uint32_t deffg;
+
+extern uint32_t bg_color;
+extern uint32_t fg_color;
+
+extern uint32_t square_color;
+extern uint16_t square_width;
+extern uint16_t square_height;
+
+extern int width, height;
+
+extern char name[128];
+
 struct Variable {
   int x;
   int y;
@@ -17,10 +31,6 @@ struct Variable {
   int heigth;
   uint32_t extra;
 };
-
-extern int width, height;
-
-extern char name[128];
 
 extern struct Variable background;
 extern struct Variable foreground;
