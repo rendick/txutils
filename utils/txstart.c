@@ -141,6 +141,7 @@ int main(int argc, char **argv) {
 
   Window win, root;
   GC gc, rect_gc;
+  XEvent event;
   XFontStruct *font_struct;
   XWindowAttributes attr;
   int screen;
@@ -159,7 +160,12 @@ int main(int argc, char **argv) {
                       CWOverrideRedirect | CWBackPixel, &attrs);
 
   gc = XCreateGC(dpy, win, 0, NULL);
+  if (!gc)
+	  die("Failed to craete GC");
+
   font_struct = XQueryFont(dpy, XGContextFromGC(gc));
+  if (!font_struct)
+	  die("Failed to create font structure");
 
   XSetForeground(dpy, gc, foreground.extra);
   XSetFillStyle(dpy, gc, FillSolid);
@@ -178,10 +184,8 @@ int main(int argc, char **argv) {
 
   char *path2conf = txconf(name, "");
   XFlush(dpy);
-  while (1) {
-    XEvent event;
-    XNextEvent(dpy, &event);
 
+  while (!XNextEvent(dpy, &event)) {
     switch (event.type) {
     case Expose:
       display_programs(dpy, win, gc, font_struct);
