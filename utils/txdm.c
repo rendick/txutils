@@ -67,7 +67,8 @@ int main(void) {
   XFontStruct* font_struct;
   int screen;
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL) die(__LINE__, "Failed to open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL)
+    die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.background_pixel = 0xffffff;

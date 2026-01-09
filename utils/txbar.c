@@ -161,7 +161,8 @@ int main(int argc, char** argv) {
   Font font;
   XFontStruct* font_struct;
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL) die(__LINE__,"Failed to open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL)
+    die(__LINE__, "Failed to open X11 display");
 
   root = DefaultRootWindow(dpy);
   win = XCreateSimpleWindow(dpy, root, 0, 0, 1, 22, 0, 0, background.extra);

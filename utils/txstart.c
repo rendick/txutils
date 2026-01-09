@@ -43,8 +43,7 @@ void run_plugin(Display* dpy,
   printf("path to config: %s\n", path_to_config);
 
   DIR* dr = opendir(path_to_config);
-  if (dr == NULL)
-    die(__LINE__, "Failed to open directory");
+  if (dr == NULL) die(__LINE__, "Failed to open directory");
 
   while ((de = readdir(dr)) != NULL) {
     if (strncmp(cmd_args[0], de->d_name, strlen(cmd_args[0]))) {
@@ -64,15 +63,13 @@ void run_plugin(Display* dpy,
 
     for (int i = 1; i < cmd_args_count; i++) {
       strcat(plugin_args, cmd_args[i]);
-      if (i != cmd_args_count)
-        strcat(plugin_args, " ");
+      if (i != cmd_args_count) strcat(plugin_args, " ");
     }
 
     sprintf(exec_plugin_cmd, "sh %s%s.sh %s", path_to_config, cmd_copy,
             plugin_args);
     rc = popen(exec_plugin_cmd, "r");
-    if (rc == NULL)
-      die(__LINE__, "Failed to execute %s", exec_plugin_cmd);
+    if (rc == NULL) die(__LINE__, "Failed to execute %s", exec_plugin_cmd);
 
     while (fgets(output, 4096, rc) != NULL) {
       puts(output);
@@ -103,8 +100,7 @@ void display_programs(Display* dpy,
   struct dirent* de;
 
   DIR* dr = opendir("/usr/bin/");
-  if (dr == NULL)
-    die(__LINE__, "Failed to open /usr/bin/");
+  if (dr == NULL) die(__LINE__, "Failed to open /usr/bin/");
 
   long int x = 10 + strwid(user_input, font_struct) + 5;
   int n = 0;
@@ -171,12 +167,10 @@ int main(int argc, char** argv) {
                       CWOverrideRedirect | CWBackPixel, &attrs);
 
   gc = XCreateGC(dpy, win, 0, NULL);
-  if (!gc)
-    die(__LINE__, "Failed to craete GC");
+  if (!gc) die(__LINE__, "Failed to craete GC");
 
   font_struct = XQueryFont(dpy, XGContextFromGC(gc));
-  if (!font_struct)
-    die(__LINE__, "Failed to create font structure");
+  if (!font_struct) die(__LINE__, "Failed to create font structure");
 
   XSetForeground(dpy, gc, foreground.extra);
   XSetFillStyle(dpy, gc, FillSolid);

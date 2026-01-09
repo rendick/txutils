@@ -2,11 +2,11 @@
 #define CORE_H
 
 #include <X11/Xlib.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 
 #define UNIX_USER getenv("USER")
 #define randnum(max, min) ((rand() % ((max) - (min) + 1)) + (min))

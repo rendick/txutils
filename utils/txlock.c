@@ -70,7 +70,8 @@ int main(int argc, char** argv) {
   // if (getuid())
   //   die("TXlock must be run under root!");
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL) die(__LINE__, "Failed to open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL)
+    die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;
