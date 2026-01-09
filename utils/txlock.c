@@ -25,20 +25,18 @@ uint16_t x_rand_square_data[INPUT_LENGTH], y_rand_square_data[INPUT_LENGTH];
 
 uint16_t number_of_squares = 0;
 
-int verify_passwd(char *password) {
-  struct passwd *pe = getpwnam("root");
-  if (!pe)
-    die("User does not exist!");
+int verify_passwd(char* password) {
+  struct passwd* pe = getpwnam("root");
+  if (!pe) die("User does not exist!");
   if (strcmp(pe->pw_passwd, "x") == 0) {
-    struct spwd *se = getspnam("root");
-    if (!se)
-      die("Failed to read shadow!");
+    struct spwd* se = getspnam("root");
+    if (!se) die("Failed to read shadow!");
     return strcmp(se->sp_pwdp, crypt(password, se->sp_pwdp));
   }
   return strcmp(pe->pw_passwd, crypt(password, pe->pw_passwd));
 }
 
-void purge_sq(Display *dpy, Window win, GC gc) {
+void purge_sq(Display* dpy, Window win, GC gc) {
   user_input[user_input_length - 1] = '\0';
   user_input_length--;
 
@@ -56,24 +54,23 @@ void purge_sq(Display *dpy, Window win, GC gc) {
   }
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   strcpy(name, txname());
   conf_analyzer(txname());
   verify_conf_args();
   srand(time(NULL));
 
-  Display *dpy;
+  Display* dpy;
   Window win, root;
   GC gc, wrong_passwd;
   Font font;
-  XFontStruct *font_struct;
+  XFontStruct* font_struct;
   int screen;
 
   // if (getuid())
   //   die("TXlock must be run under root!");
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL)
-    die("Cannon open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL) die("Cannon open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;
@@ -105,42 +102,43 @@ int main(int argc, char **argv) {
     XNextEvent(dpy, &event);
     printf("%s\n", user_input);
     switch (event.type) {
-    case KeyPress:
-      KeySym keysym = XLookupKeysym(&event.xkey, 0);
-      if ((event.xkey.state & ControlMask) && keysym == XK_u) {
-        number_of_squares = 1, user_input_length = 1;
-        purge_sq(dpy, win, gc);
-        break;
-      }
-      if (keysym > 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
-        int x_rand_coordinates = randnum(
-                (((DisplayWidth(dpy, screen) - 1270) >> 1) + 1270) - 100,
-                (DisplayWidth(dpy, screen) - 1270) >> 1),
-            y_rand_coordinates =
-                randnum((((DisplayHeight(dpy, screen) - 720) >> 1) + 720) - 100,
-                        (DisplayHeight(dpy, screen) - 720) >> 1);
-        x_rand_square_data[number_of_squares] = x_rand_coordinates,
-        y_rand_square_data[number_of_squares] = y_rand_coordinates;
-        XFillRectangle(dpy, win, gc, x_rand_coordinates, y_rand_coordinates,
-                       square_width, square_height);
-        XFlush(dpy);
-
-        user_input[user_input_length++] = (char)keysym;
-        user_input[user_input_length + 1] = '\0';
-        number_of_squares++;
-        XFlush(dpy);
-      } else if (keysym == XK_BackSpace && user_input_length > 0) {
-        purge_sq(dpy, win, gc);
-      } else if (keysym == XK_Return) {
-        if (verify_passwd(user_input) == 0) {
-          XCloseDisplay(dpy);
-          return EXIT_SUCCESS;
+      case KeyPress:
+        KeySym keysym = XLookupKeysym(&event.xkey, 0);
+        if ((event.xkey.state & ControlMask) && keysym == XK_u) {
+          number_of_squares = 1, user_input_length = 1;
+          purge_sq(dpy, win, gc);
+          break;
         }
-      }
-      break;
-    case FocusOut:
-      XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync, CurrentTime);
-      break;
+        if (keysym > 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
+          int x_rand_coordinates = randnum(
+                  (((DisplayWidth(dpy, screen) - 1270) >> 1) + 1270) - 100,
+                  (DisplayWidth(dpy, screen) - 1270) >> 1),
+              y_rand_coordinates = randnum(
+                  (((DisplayHeight(dpy, screen) - 720) >> 1) + 720) - 100,
+                  (DisplayHeight(dpy, screen) - 720) >> 1);
+          x_rand_square_data[number_of_squares] = x_rand_coordinates,
+          y_rand_square_data[number_of_squares] = y_rand_coordinates;
+          XFillRectangle(dpy, win, gc, x_rand_coordinates, y_rand_coordinates,
+                         square_width, square_height);
+          XFlush(dpy);
+
+          user_input[user_input_length++] = (char)keysym;
+          user_input[user_input_length + 1] = '\0';
+          number_of_squares++;
+          XFlush(dpy);
+        } else if (keysym == XK_BackSpace && user_input_length > 0) {
+          purge_sq(dpy, win, gc);
+        } else if (keysym == XK_Return) {
+          if (verify_passwd(user_input) == 0) {
+            XCloseDisplay(dpy);
+            return EXIT_SUCCESS;
+          }
+        }
+        break;
+      case FocusOut:
+        XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync,
+                      CurrentTime);
+        break;
     }
   }
 

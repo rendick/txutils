@@ -42,16 +42,16 @@ struct Variable input_foreground;
 struct Variable square;
 struct Variable window;
 
-void die(char *msg) {
+void die(char* msg) {
   fprintf(stderr, "%s\n", msg);
   exit(EXIT_FAILURE);
 }
 
-int strwid(char *str, XFontStruct *font_struct) {
+int strwid(char* str, XFontStruct* font_struct) {
   return XTextWidth(font_struct, str, strlen(str));
 }
 
-int strhei(XFontStruct *font_info) {
+int strhei(XFontStruct* font_info) {
   return font_info->ascent + font_info->descent;
 }
 
@@ -71,13 +71,13 @@ void verify_conf_args() {
     window_width = window.width;
     window_height = window.heigth;
   } else {
-    Display *dpy = XOpenDisplay(NULL);
+    Display* dpy = XOpenDisplay(NULL);
     window_width = 25;
     window_height = DisplayWidth(dpy, DefaultScreen(dpy));
   }
 }
 
-char *txconf(char *util_name, char *args) {
+char* txconf(char* util_name, char* args) {
   char copy_util_name[100];
   strcpy(copy_util_name, util_name);
 
@@ -96,7 +96,7 @@ char *txconf(char *util_name, char *args) {
   return path_to_config;
 }
 
-char *txname() {
+char* txname() {
   static char name[256];
   static char path[4096];
   ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
@@ -115,7 +115,7 @@ char *txname() {
   }
 
   int j = 0;
-  char *token = strtok(path, "/");
+  char* token = strtok(path, "/");
   while (token != NULL) {
     if (j++ == slash_n - 1) {
       strcpy(name, token);
@@ -125,28 +125,28 @@ char *txname() {
   return name;
 }
 
-void set_values(struct Variable *var, int arg_n, char *token) {
+void set_values(struct Variable* var, int arg_n, char* token) {
   switch (arg_n) {
-  case 1:
-    var->x = atoi(token);
-  case 2:
-    var->y = atoi(token);
-  case 3:
-    if (strcmp(token, "MAX") == 0)
-      var->width = width;
-    else
-      var->width = atoi(token);
-  case 4:
-    if (strcmp(token, "MAX") == 0)
-      var->heigth = height;
-    else
-      var->heigth = atoi(token);
-  case 5:
-    var->extra = strtol(token, NULL, 0);
+    case 1:
+      var->x = atoi(token);
+    case 2:
+      var->y = atoi(token);
+    case 3:
+      if (strcmp(token, "MAX") == 0)
+        var->width = width;
+      else
+        var->width = atoi(token);
+    case 4:
+      if (strcmp(token, "MAX") == 0)
+        var->heigth = height;
+      else
+        var->heigth = atoi(token);
+    case 5:
+      var->extra = strtol(token, NULL, 0);
   }
 }
 
-void conf_analyzer(char *util_name) {
+void conf_analyzer(char* util_name) {
   char copy_util_name[100];
   strcpy(copy_util_name, util_name);
 
@@ -168,12 +168,12 @@ void conf_analyzer(char *util_name) {
   char output[4096];
   int arg_n = 0;
 
-  FILE *rf;
+  FILE* rf;
   rf = fopen(path_to_config, "r");
 
   while (fgets(output, 4096, rf)) {
     char option_type[100];
-    char *token = strtok(output, " ={},");
+    char* token = strtok(output, " ={},");
     while (token != NULL) {
       if (strcmp(token, "\n") != 0) {
         printf("(%d) arg: %s\n", arg_n, token);

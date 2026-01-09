@@ -6,15 +6,14 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
 int main(void) {
-  Display *dpy;
+  Display* dpy;
   Window root;
   XWindowAttributes attr;
 
   XButtonEvent start;
   XEvent event;
 
-  if (!(dpy = XOpenDisplay(0x0)))
-    die("Cannot open X11 display");
+  if (!(dpy = XOpenDisplay(0x0))) die("Cannot open X11 display");
 
   root = DefaultRootWindow(dpy);
 
@@ -44,7 +43,6 @@ int main(void) {
         printf("dmenu\n");
         system("dmenu_run &");
       } else if (event.xkey.subwindow != None) {
-
         if (event.xkey.keycode == XKeysymToKeycode(dpy, XStringToKeysym("n"))) {
           XCirculateSubwindowsUp(dpy, root);
           XSetInputFocus(dpy, event.xkey.window, RevertToParent, CurrentTime);

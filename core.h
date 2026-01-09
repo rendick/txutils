@@ -42,16 +42,16 @@ extern struct Variable input_foreground;
 extern struct Variable square;
 extern struct Variable window;
 
-void die(const char *msg);
+void die(const char* msg);
 
-int strwid(const char *str, XFontStruct *font_struct);
-int strhei(XFontStruct *font_struct);
+int strwid(const char* str, XFontStruct* font_struct);
+int strhei(XFontStruct* font_struct);
 
 void verify_conf_args();
 
-char *txconf(char *util_name, char *args);
-char *txname();
+char* txconf(char* util_name, char* args);
+char* txname();
 
-void conf_analyzer(char *util_name);
+void conf_analyzer(char* util_name);
 
 #endif

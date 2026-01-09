@@ -14,17 +14,16 @@
 char user_input[INPUT_LENGTH] = {0};
 uint16_t user_input_length = 0;
 
-char (*get_envs(int *count))[2][256] {
+char (*get_envs(int* count))[2][256] {
   (*count) = 0;
 
   char env_dir[] = "/usr/share/xsessions/";
   static char envs[10][2][256];
 
-  struct dirent *de;
+  struct dirent* de;
 
-  DIR *rd = opendir(env_dir);
-  if (rd == NULL)
-    die("Could not open directory");
+  DIR* rd = opendir(env_dir);
+  if (rd == NULL) die("Could not open directory");
 
   while ((de = readdir(rd)) != NULL) {
     if (de->d_type != DT_DIR) {
@@ -35,7 +34,7 @@ char (*get_envs(int *count))[2][256] {
       char name[256] = "";
       char exec[256] = "";
 
-      FILE *rf = fopen(file_path, "r");
+      FILE* rf = fopen(file_path, "r");
       while (fgets(line, 1024, rf)) {
         line[strlen(line) - 1] = '\0';
         if (strncmp(line, "Name=", strlen("Name=")) == 0) {
@@ -61,16 +60,14 @@ char (*get_envs(int *count))[2][256] {
 }
 
 int main(void) {
-
-  Display *dpy;
+  Display* dpy;
   Window win, root;
   GC gc, wrong_passwd;
   Font font;
-  XFontStruct *font_struct;
+  XFontStruct* font_struct;
   int screen;
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL)
-    die("Cannot open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL) die("Cannot open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.background_pixel = 0xffffff;
@@ -84,9 +81,9 @@ int main(void) {
   font_struct = XQueryFont(dpy, XGContextFromGC(gc));
 
   XStoreName(dpy, win, "txdm");
-  XSelectInput(dpy, win,
-               StructureNotifyMask | ExposureMask | KeyPressMask |
-                   FocusChangeMask);
+  XSelectInput(
+      dpy, win,
+      StructureNotifyMask | ExposureMask | KeyPressMask | FocusChangeMask);
   XMapWindow(dpy, win);
   XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync, CurrentTime);
 
@@ -94,53 +91,53 @@ int main(void) {
     XEvent event;
     XNextEvent(dpy, &event);
     switch (event.type) {
-      // case Expose:
-      //   static int count;
-      //   char (*envs)[2][256] = get_envs(&count);
-      //   printf("%d\n", count);
+        // case Expose:
+        //   static int count;
+        //   char (*envs)[2][256] = get_envs(&count);
+        //   printf("%d\n", count);
 
-      //   int x = 100;
-      //   int y = 100;
-      //   for (int i = 0; i < count; i++) {
-      //     printf("%d: %s\n", i, envs[i][0]);
-      //     XDrawString(dpy, win, gc, x, y, envs[i][0], strlen(envs[i][0]));
-      //     y += strhei(font_struct) + 1;
-      //   }
-      //   XFlush(dpy);
-      //   break;
+        //   int x = 100;
+        //   int y = 100;
+        //   for (int i = 0; i < count; i++) {
+        //     printf("%d: %s\n", i, envs[i][0]);
+        //     XDrawString(dpy, win, gc, x, y, envs[i][0], strlen(envs[i][0]));
+        //     y += strhei(font_struct) + 1;
+        //   }
+        //   XFlush(dpy);
+        //   break;
 
-    case KeyPress:
+      case KeyPress:
 
-      KeySym keysym = XLookupKeysym(&event.xkey, 0);
-      if (keysym >= 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
-        user_input[user_input_length] = (char)keysym;
-        user_input[user_input_length + 1] = '\0';
-        user_input_length++;
-        printf("%s\n", user_input);
-        XClearWindow(dpy, win);
-        XDrawString(dpy, win, gc, 50, 50, user_input, user_input_length);
-        XFlush(dpy);
-      } else if (keysym == XK_BackSpace && user_input_length > 0) {
-        user_input[user_input_length - 1] = '\0';
-        user_input_length--;
+        KeySym keysym = XLookupKeysym(&event.xkey, 0);
+        if (keysym >= 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
+          user_input[user_input_length] = (char)keysym;
+          user_input[user_input_length + 1] = '\0';
+          user_input_length++;
+          printf("%s\n", user_input);
+          XClearWindow(dpy, win);
+          XDrawString(dpy, win, gc, 50, 50, user_input, user_input_length);
+          XFlush(dpy);
+        } else if (keysym == XK_BackSpace && user_input_length > 0) {
+          user_input[user_input_length - 1] = '\0';
+          user_input_length--;
 
-        XClearWindow(dpy, win);
-        printf("backspace: %s\n", user_input);
-        XFillRectangle(dpy, win, gc, 0, 0, width, 100);
-        XDrawString(dpy, win, gc, 50, 50, user_input, user_input_length);
-        XFlush(dpy);
-      } else if (keysym == XK_Return) {
-        int count;
-        char (*envs)[2][256] = get_envs(&count);
-        printf("%d\n", count);
+          XClearWindow(dpy, win);
+          printf("backspace: %s\n", user_input);
+          XFillRectangle(dpy, win, gc, 0, 0, width, 100);
+          XDrawString(dpy, win, gc, 50, 50, user_input, user_input_length);
+          XFlush(dpy);
+        } else if (keysym == XK_Return) {
+          int count;
+          char (*envs)[2][256] = get_envs(&count);
+          printf("%d\n", count);
 
-        for (int i = 0; i < count; i++) {
-          if (strcmp(user_input, envs[i][0]) == 0) {
-            execlp(envs[i][0], envs[i][0], NULL);
+          for (int i = 0; i < count; i++) {
+            if (strcmp(user_input, envs[i][0]) == 0) {
+              execlp(envs[i][0], envs[i][0], NULL);
+            }
           }
         }
-      }
-      break;
+        break;
     }
     int count;
     char (*envs)[2][256] = get_envs(&count);

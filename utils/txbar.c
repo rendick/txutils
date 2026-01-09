@@ -13,14 +13,14 @@
 #define MAX_MODULES 50
 
 int number_of_modules = 0;
-char *output_of_modules[MAX_MODULES];
+char* output_of_modules[MAX_MODULES];
 int width_of_modules[MAX_MODULES] = {0};
 
-char *separator = " | ";
+char* separator = " | ";
 
 typedef struct {
-  char *command;
-  char *output;
+  char* command;
+  char* output;
   int interval;
   long last_time;
 } Module;
@@ -35,14 +35,14 @@ long current_time_in_secs() {
 // get_workspace_information() gives all required data: the number of workspaces
 // and the current workspace. Now all that remains is to implement its graphical
 // implementation.
-void get_workspace_information(Display *dpy, Window root) {
+void get_workspace_information(Display* dpy, Window root) {
   Atom net_number_of_workspaces =
       XInternAtom(dpy, "_NET_NUMBER_OF_DESKTOPS", False);
   Atom net_current_workspace = XInternAtom(dpy, "_NET_CURRENT_DESKTOP", False);
   Atom actual_type_return;
   int actual_format_return;
   unsigned long number_of_items, bytes_after_return;
-  unsigned char *property_data = NULL;
+  unsigned char* property_data = NULL;
 
   int number_of_workspaces = 0;
   if (XGetWindowProperty(dpy, root, net_number_of_workspaces, 0, 1, False,
@@ -50,7 +50,7 @@ void get_workspace_information(Display *dpy, Window root) {
                          &actual_format_return, &number_of_items,
                          &bytes_after_return, &property_data) == 0 &&
       property_data) {
-    number_of_workspaces = *(int *)property_data;
+    number_of_workspaces = *(int*)property_data;
     XFree(property_data);
     printf("Number of workspaces: %d\n", number_of_workspaces);
   }
@@ -61,13 +61,13 @@ void get_workspace_information(Display *dpy, Window root) {
                          &actual_format_return, &number_of_items,
                          &bytes_after_return, &property_data) == 0 &&
       property_data) {
-    current_workspace_position = *(int *)property_data + 1;
+    current_workspace_position = *(int*)property_data + 1;
     XFree(property_data);
     printf("Current workspace: %d\n", current_workspace_position);
   }
 }
 
-void add_module(char *command, int interval) {
+void add_module(char* command, int interval) {
   modules[number_of_modules].command = strdup(command);
   modules[number_of_modules].output = NULL;
   modules[number_of_modules].interval = interval;
@@ -79,13 +79,11 @@ void update_modules() {
   int now = current_time_in_secs();
   for (int i = 0; i < number_of_modules; i++) {
     if (now - modules[i].last_time >= modules[i].interval) {
-      FILE *run_command = popen(modules[i].command, "r");
-      if (!run_command)
-        perror("popen()");
+      FILE* run_command = popen(modules[i].command, "r");
+      if (!run_command) perror("popen()");
       char buffer[1024];
       while (fgets(buffer, sizeof(buffer), run_command)) {
-        if (strlen(buffer) > 0)
-          buffer[strlen(buffer) - 1] = '\0';
+        if (strlen(buffer) > 0) buffer[strlen(buffer) - 1] = '\0';
         modules[i].output = strdup(buffer);
       }
       pclose(run_command);
@@ -94,7 +92,7 @@ void update_modules() {
   }
 }
 
-void draw_modules(Display *dpy, Window win, GC gc, XFontStruct *font_struct) {
+void draw_modules(Display* dpy, Window win, GC gc, XFontStruct* font_struct) {
   int free_screen_width = DisplayWidth(dpy, DefaultScreen(dpy));
   for (int i = 0; i < number_of_modules; i++) {
     XDrawString(dpy, win, gc,
@@ -113,9 +111,9 @@ void draw_modules(Display *dpy, Window win, GC gc, XFontStruct *font_struct) {
 }
 
 void parse_modules() {
-  char *path_to_dir = txconf(name, "");
-  struct dirent *de;
-  DIR *read = opendir(path_to_dir);
+  char* path_to_dir = txconf(name, "");
+  struct dirent* de;
+  DIR* read = opendir(path_to_dir);
   if (read == NULL) {
     die("Could not open current directory.");
   }
@@ -123,19 +121,19 @@ void parse_modules() {
     if (strcmp(de->d_name, "modules") == 0) {
       char buffer[1024];
 
-      char *path_to_modules = txconf(name, "modules");
-      FILE *omf = fopen(path_to_modules, "r");
+      char* path_to_modules = txconf(name, "modules");
+      FILE* omf = fopen(path_to_modules, "r");
       while (fgets(buffer, sizeof(buffer), omf)) {
         char module_cmd[512];
         int delay;
         int n = 0;
-        char *token = strtok(buffer, "|");
+        char* token = strtok(buffer, "|");
         while (token != NULL) {
           switch (n) {
-          case 0:
-            strcpy(module_cmd, token);
-          case 1:
-            delay = atoi(token);
+            case 0:
+              strcpy(module_cmd, token);
+            case 1:
+              delay = atoi(token);
           }
           n++;
           token = strtok(NULL, "|");
@@ -153,18 +151,17 @@ void parse_modules() {
   closedir(read);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   strcpy(name, txname());
   conf_analyzer(txname());
 
-  Display *dpy;
+  Display* dpy;
   Window win, root;
   GC gc;
   Font font;
-  XFontStruct *font_struct;
+  XFontStruct* font_struct;
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL)
-    die("Cannon open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL) die("Cannon open X11 display");
 
   root = DefaultRootWindow(dpy);
   win = XCreateSimpleWindow(dpy, root, 0, 0, 1, 22, 0, 0, background.extra);
@@ -173,7 +170,7 @@ int main(int argc, char **argv) {
   Atom wm_window_type_dock =
       XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
   XChangeProperty(dpy, win, wm_window_type, XA_ATOM, 32, PropModeReplace,
-                  (unsigned char *)&wm_window_type_dock, 1);
+                  (unsigned char*)&wm_window_type_dock, 1);
 
   gc = XCreateGC(dpy, win, 0, NULL);
 
@@ -204,7 +201,7 @@ int main(int argc, char **argv) {
     draw_modules(dpy, win, gc, font_struct);
     printf("%ld\n", current_time_in_secs());
 
-    usleep(200 * 1000); // milliseconds * 1000 (milliseconds to microseconds)
+    usleep(200 * 1000);  // milliseconds * 1000 (milliseconds to microseconds)
   }
 
   for (int i = 0; i < number_of_modules; i++) {
