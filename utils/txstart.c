@@ -204,10 +204,12 @@ int main(int argc, char** argv) {
             (event.xkey.state & ControlMask) && keysym == XK_c) {
           die(__LINE__, "Exiting...");
         } else if ((event.xkey.state & ControlMask) && keysym == XK_u) {
+          first_program[0] = '\0';
           user_input[0] = '\0';
           user_input_length = 0;
 
           XClearWindow(dpy, win);
+          display_programs(dpy, win, gc, font_struct, first_program);
           XFlush(dpy);
 
           break;
@@ -267,5 +269,6 @@ int main(int argc, char** argv) {
 
   XFreeGC(dpy, gc);
   XCloseDisplay(dpy);
+
   return 0;
 }
