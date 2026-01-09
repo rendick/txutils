@@ -1,9 +1,8 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
-#include <linux/limits.h>
-
 #include <dirent.h>
+#include <linux/limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,20 +15,23 @@
 
 #define INPUT_LENGTH 512
 
-Display *dpy;
 char user_input[INPUT_LENGTH] = {0};
-uint16_t user_input_length = 0;
+int user_input_length = 0;
 
-void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
-                char *cmd) {
+void run_plugin(Display* dpy,
+                Window win,
+                GC gc,
+                XFontStruct* font_struct,
+                char* cmd) {
   int exist_status = 1;
-  struct dirent *de;
+  struct dirent* de;
 
   char cmd_copy[256];
   strcpy(cmd_copy, cmd);
-  char *cmd_args[512];
+  char* cmd_args[512];
   int cmd_args_count = 0;
-  char *token = strtok(cmd_copy, " ");
+
+  char* token = strtok(cmd_copy, " ");
   while (token != NULL) {
     cmd_args[cmd_args_count++] = token;
     token = strtok(NULL, " ");
@@ -37,12 +39,12 @@ void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
 
   cmd_args[cmd_args_count] = NULL;
 
-  char *path_to_config = txconf(name, "");
+  char* path_to_config = txconf(name, "");
   printf("path to config: %s\n", path_to_config);
 
-  DIR *dr = opendir(path_to_config);
+  DIR* dr = opendir(path_to_config);
   if (dr == NULL)
-    die("Could not open directory");
+    die("Failed to open directory");
 
   while ((de = readdir(dr)) != NULL) {
     if (strncmp(cmd_args[0], de->d_name, strlen(cmd_args[0]))) {
@@ -52,7 +54,7 @@ void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
   }
 
   if (exist_status == 0) {
-    FILE *rc;
+    FILE* rc;
 
     char output[4096];
     int new_lines_output = 0;
@@ -70,14 +72,14 @@ void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
             plugin_args);
     rc = popen(exec_plugin_cmd, "r");
     if (rc == NULL)
-      die("rc error");
+      die("Failed to execute plugin");
 
     while (fgets(output, 4096, rc) != NULL) {
       puts(output);
-      XDrawString(dpy, win, gc, 100,
-                  (window.heigth - strhei(font_struct)) / 2 +
-                      font_struct->ascent,
-                  output, strlen(output));
+      XDrawString(
+          dpy, win, gc, 100,
+          (window.heigth - strhei(font_struct)) / 2 + font_struct->ascent,
+          output, strlen(output));
       XFlush(dpy);
     }
 
@@ -93,13 +95,16 @@ void run_plugin(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
   path_to_config[0] = '\0';
 }
 
-void display_programs(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
-                      KeySym keysym, char *first_program) {
-  struct dirent *de;
+void display_programs(Display* dpy,
+                      Window win,
+                      GC gc,
+                      XFontStruct* font_struct,
+                      char* first_program) {
+  struct dirent* de;
 
-  DIR *dr = opendir("/usr/bin/");
+  DIR* dr = opendir("/usr/bin/");
   if (dr == NULL)
-    die("Could not open directory");
+    die("Failed to open directory");
 
   long int x = 10 + strwid(user_input, font_struct) + 5;
   int n = 0;
@@ -107,10 +112,10 @@ void display_programs(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
     if (strncmp(user_input, de->d_name, user_input_length) == 0 &&
         de->d_type != DT_DIR) {
       if (n <= 100) {
-        XDrawString(dpy, win, gc, x,
-                    (window.heigth - strhei(font_struct)) / 2 +
-                        font_struct->ascent,
-                    de->d_name, strlen(de->d_name));
+        XDrawString(
+            dpy, win, gc, x,
+            (window.heigth - strhei(font_struct)) / 2 + font_struct->ascent,
+            de->d_name, strlen(de->d_name));
         x += strwid(de->d_name, font_struct) + 5;
       }
 
@@ -123,10 +128,10 @@ void display_programs(Display *dpy, Window win, GC gc, XFontStruct *font_struct,
   }
 }
 
-void run_program(char *name) {
-  char *cmd_args[512];
+void run_program(char* name) {
+  char* cmd_args[512];
   int cmd_args_count = 0;
-  char *token = strtok(name, " ");
+  char* token = strtok(name, " ");
   while (token != NULL) {
     cmd_args[cmd_args_count++] = token;
     token = strtok(NULL, " ");
@@ -139,20 +144,21 @@ void run_program(char *name) {
   _exit(EXIT_FAILURE);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   strcpy(name, txname());
   conf_analyzer(txname());
   verify_conf_args();
 
+  Display* dpy;
   Window win, root;
-  GC gc, rect_gc;
+  GC gc;
   XEvent event;
-  XFontStruct *font_struct;
+  XFontStruct* font_struct;
   XWindowAttributes attr;
   int screen;
 
   if ((dpy = XOpenDisplay(NULL)) == NULL)
-    die("Cannot open X11 display");
+    die("Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;
@@ -176,9 +182,9 @@ int main(int argc, char **argv) {
   XSetFillStyle(dpy, gc, FillSolid);
 
   XStoreName(dpy, win, "txstart");
-  XSelectInput(dpy, win,
-               StructureNotifyMask | ExposureMask | KeyPressMask |
-                   FocusChangeMask);
+  XSelectInput(
+      dpy, win,
+      StructureNotifyMask | ExposureMask | KeyPressMask | FocusChangeMask);
   XMapWindow(dpy, win);
   XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync, CurrentTime);
 
@@ -187,83 +193,85 @@ int main(int argc, char **argv) {
     height = attr.height;
   }
 
-  char *path2conf = txconf(name, "");
+  char* path2conf = txconf(name, "");
   XFlush(dpy);
 
   while (!XNextEvent(dpy, &event)) {
     KeySym keysym = XLookupKeysym(&event.xkey, 0);
     char first_program[256];
     switch (event.type) {
-    case Expose:
-      display_programs(dpy, win, gc, font_struct, keysym, first_program);
-      XFlush(dpy);
-      break;
-    case KeyPress:
-
-      if (keysym == XK_Escape ||
-          (event.xkey.state & ControlMask) && keysym == XK_c) {
-        die("");
-      } else if ((event.xkey.state & ControlMask) && keysym == XK_u) {
-        user_input[0] = '\0';
-        user_input_length = 0;
-
-        XClearWindow(dpy, win);
+      case Expose:
+        display_programs(dpy, win, gc, font_struct, first_program);
         XFlush(dpy);
-
         break;
-      }
+      case KeyPress:
 
-      if (keysym >= 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
-        user_input[user_input_length] = (char)keysym;
-        user_input[user_input_length + 1] = '\0';
-        user_input_length++;
+        if (keysym == XK_Escape ||
+            (event.xkey.state & ControlMask) && keysym == XK_c) {
+          die("Exiting...");
+        } else if ((event.xkey.state & ControlMask) && keysym == XK_u) {
+          user_input[0] = '\0';
+          user_input_length = 0;
 
-        XClearWindow(dpy, win);
-        XDrawString(dpy, win, gc, 10,
-                    (window.heigth - strhei(font_struct)) / 2 +
-                        font_struct->ascent,
-                    user_input, user_input_length);
+          XClearWindow(dpy, win);
+          XFlush(dpy);
 
-        display_programs(dpy, win, gc, font_struct, keysym, first_program);
-        XFlush(dpy);
-      } else if (keysym == XK_BackSpace && user_input_length > 0) {
-        user_input[user_input_length - 1] = '\0';
-        user_input_length--;
-
-        XClearWindow(dpy, win);
-        XDrawString(dpy, win, gc, 10,
-                    (window.heigth - strhei(font_struct)) / 2 +
-                        font_struct->ascent,
-                    user_input, user_input_length);
-        display_programs(dpy, win, gc, font_struct, keysym, first_program);
-        XFlush(dpy);
-      } else if (keysym == XK_Tab) {
-        user_input[0] = '\0';
-        strcpy(user_input, first_program);
-        user_input_length = strlen(user_input);
-        printf("%s, %s\n", first_program, user_input);
-        XClearWindow(dpy, win);
-        XDrawString(dpy, win, gc, 10,
-                    (window.heigth - strhei(font_struct)) / 2 +
-                        font_struct->ascent,
-                    user_input, user_input_length);
-
-        XFlush(dpy);
-      } else if (keysym == XK_Return && user_input_length > 0) {
-        char cmd_existance_checker[100];
-        sprintf(cmd_existance_checker, "which %s > /dev/null 2>&1", user_input);
-
-        printf("return: %s\n", user_input);
-        if (system(cmd_existance_checker)) {
-          printf("system: %s\n", user_input);
-          run_plugin(dpy, win, gc, font_struct, user_input);
-        } else {
-          run_program(user_input);
+          break;
         }
-      }
+
+        if (keysym >= 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
+          user_input[user_input_length] = (char)keysym;
+          user_input[user_input_length + 1] = '\0';
+          user_input_length++;
+
+          XClearWindow(dpy, win);
+          XDrawString(
+              dpy, win, gc, 10,
+              (window.heigth - strhei(font_struct)) / 2 + font_struct->ascent,
+              user_input, user_input_length);
+
+          display_programs(dpy, win, gc, font_struct, first_program);
+          XFlush(dpy);
+        } else if (keysym == XK_BackSpace && user_input_length > 0) {
+          user_input[user_input_length - 1] = '\0';
+          user_input_length--;
+
+          XClearWindow(dpy, win);
+          XDrawString(
+              dpy, win, gc, 10,
+              (window.heigth - strhei(font_struct)) / 2 + font_struct->ascent,
+              user_input, user_input_length);
+          display_programs(dpy, win, gc, font_struct, first_program);
+          XFlush(dpy);
+        } else if (keysym == XK_Tab) {
+          user_input[0] = '\0';
+          strcpy(user_input, first_program);
+          user_input_length = strlen(user_input);
+          printf("%s, %s\n", first_program, user_input);
+          XClearWindow(dpy, win);
+          XDrawString(
+              dpy, win, gc, 10,
+              (window.heigth - strhei(font_struct)) / 2 + font_struct->ascent,
+              user_input, user_input_length);
+
+          XFlush(dpy);
+        } else if (keysym == XK_Return && user_input_length > 0) {
+          char cmd_existance_checker[100];
+          sprintf(cmd_existance_checker, "which %s > /dev/null 2>&1",
+                  user_input);
+
+          printf("return: %s\n", user_input);
+          if (system(cmd_existance_checker)) {
+            printf("system: %s\n", user_input);
+            run_plugin(dpy, win, gc, font_struct, user_input);
+          } else {
+            run_program(user_input);
+          }
+        }
     }
   }
 
+  XFreeGC(dpy, gc);
   XCloseDisplay(dpy);
   return 0;
 }
