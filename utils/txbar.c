@@ -115,7 +115,7 @@ void parse_modules() {
   struct dirent* de;
   DIR* read = opendir(path_to_dir);
   if (read == NULL) {
-    die("Could not open current directory.");
+    die(__LINE__, "Faild to open %s", path_to_dir);
   }
   while ((de = readdir(read)) != NULL) {
     if (strcmp(de->d_name, "modules") == 0) {
@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
   Font font;
   XFontStruct* font_struct;
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL) die("Cannon open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL) die(__LINE__,"Failed to open X11 display");
 
   root = DefaultRootWindow(dpy);
   win = XCreateSimpleWindow(dpy, root, 0, 0, 1, 22, 0, 0, background.extra);

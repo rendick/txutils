@@ -1,5 +1,6 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
+#include <stdarg.h>
 
 #include "../core.h"
 
@@ -13,7 +14,7 @@ int main(void) {
   XButtonEvent start;
   XEvent event;
 
-  if (!(dpy = XOpenDisplay(0x0))) die("Cannot open X11 display");
+  if (!(dpy = XOpenDisplay(0x0))) die(__LINE__, "Cannot open X11 display");
 
   root = DefaultRootWindow(dpy);
 

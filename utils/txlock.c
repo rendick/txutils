@@ -27,10 +27,10 @@ uint16_t number_of_squares = 0;
 
 int verify_passwd(char* password) {
   struct passwd* pe = getpwnam("root");
-  if (!pe) die("User does not exist!");
+  if (!pe) die(__LINE__, "User does not exist!");
   if (strcmp(pe->pw_passwd, "x") == 0) {
     struct spwd* se = getspnam("root");
-    if (!se) die("Failed to read shadow!");
+    if (!se) die(__LINE__, "Failed to read /etc/shadow!");
     return strcmp(se->sp_pwdp, crypt(password, se->sp_pwdp));
   }
   return strcmp(pe->pw_passwd, crypt(password, pe->pw_passwd));
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
   // if (getuid())
   //   die("TXlock must be run under root!");
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL) die("Cannon open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL) die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;

@@ -23,7 +23,7 @@ char (*get_envs(int* count))[2][256] {
   struct dirent* de;
 
   DIR* rd = opendir(env_dir);
-  if (rd == NULL) die("Could not open directory");
+  if (rd == NULL) die(__LINE__, "Could not open %s", env_dir);
 
   while ((de = readdir(rd)) != NULL) {
     if (de->d_type != DT_DIR) {
@@ -67,7 +67,7 @@ int main(void) {
   XFontStruct* font_struct;
   int screen;
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL) die("Cannot open X11 display");
+  if ((dpy = XOpenDisplay(NULL)) == NULL) die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.background_pixel = 0xffffff;

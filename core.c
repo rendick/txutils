@@ -1,5 +1,6 @@
 #include <X11/Xlib.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,8 +43,13 @@ struct Variable input_foreground;
 struct Variable square;
 struct Variable window;
 
-void die(char* msg) {
-  fprintf(stderr, "%s\n", msg);
+void die(int line_number, const char* msg, ...) {
+  va_list vargs;
+  va_start(vargs, msg);
+  fprintf(stderr, "%d: ", line_number);
+  vfprintf(stderr, msg, vargs);
+  fprintf(stderr, ".\n");
+  va_end(vargs);
   exit(EXIT_FAILURE);
 }
 

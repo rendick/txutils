@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 
 #define UNIX_USER getenv("USER")
 #define randnum(max, min) ((rand() % ((max) - (min) + 1)) + (min))
@@ -42,7 +43,7 @@ extern struct Variable input_foreground;
 extern struct Variable square;
 extern struct Variable window;
 
-void die(const char* msg);
+void die(int line_number, const char* msg, ...);
 
 int strwid(const char* str, XFontStruct* font_struct);
 int strhei(XFontStruct* font_struct);

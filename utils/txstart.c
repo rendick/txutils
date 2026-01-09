@@ -44,7 +44,7 @@ void run_plugin(Display* dpy,
 
   DIR* dr = opendir(path_to_config);
   if (dr == NULL)
-    die("Failed to open directory");
+    die(__LINE__, "Failed to open directory");
 
   while ((de = readdir(dr)) != NULL) {
     if (strncmp(cmd_args[0], de->d_name, strlen(cmd_args[0]))) {
@@ -72,7 +72,7 @@ void run_plugin(Display* dpy,
             plugin_args);
     rc = popen(exec_plugin_cmd, "r");
     if (rc == NULL)
-      die("Failed to execute plugin");
+      die(__LINE__, "Failed to execute %s", exec_plugin_cmd);
 
     while (fgets(output, 4096, rc) != NULL) {
       puts(output);
@@ -104,7 +104,7 @@ void display_programs(Display* dpy,
 
   DIR* dr = opendir("/usr/bin/");
   if (dr == NULL)
-    die("Failed to open directory");
+    die(__LINE__, "Failed to open /usr/bin/");
 
   long int x = 10 + strwid(user_input, font_struct) + 5;
   int n = 0;
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
   int screen;
 
   if ((dpy = XOpenDisplay(NULL)) == NULL)
-    die("Failed to open X11 display");
+    die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;
@@ -172,11 +172,11 @@ int main(int argc, char** argv) {
 
   gc = XCreateGC(dpy, win, 0, NULL);
   if (!gc)
-    die("Failed to craete GC");
+    die(__LINE__, "Failed to craete GC");
 
   font_struct = XQueryFont(dpy, XGContextFromGC(gc));
   if (!font_struct)
-    die("Failed to create font structure");
+    die(__LINE__, "Failed to create font structure");
 
   XSetForeground(dpy, gc, foreground.extra);
   XSetFillStyle(dpy, gc, FillSolid);
@@ -208,7 +208,7 @@ int main(int argc, char** argv) {
 
         if (keysym == XK_Escape ||
             (event.xkey.state & ControlMask) && keysym == XK_c) {
-          die("Exiting...");
+          die(__LINE__, "Exiting...");
         } else if ((event.xkey.state & ControlMask) && keysym == XK_u) {
           user_input[0] = '\0';
           user_input_length = 0;
