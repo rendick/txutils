@@ -16,6 +16,17 @@
 
 #include "../core.h"
 
+typedef struct {
+  Display* dpy;
+  Window win, root;
+  GC gc, wrong_passwd;
+  XEvent event;
+  XFontStruct* font_struct;
+  XWindowAttributes attr;
+  Font font;
+  int screen;
+} txlock;
+
 #define INPUT_LENGTH 512
 
 char user_input[INPUT_LENGTH] = {0};
@@ -36,7 +47,7 @@ int verify_passwd(char* password) {
   return strcmp(pe->pw_passwd, crypt(password, pe->pw_passwd));
 }
 
-void purge_sq(Display* dpy, Window win, GC gc) {
+void purge_sq(txlock* tx) {
   user_input[user_input_length - 1] = '\0';
   user_input_length--;
 
@@ -44,106 +55,104 @@ void purge_sq(Display* dpy, Window win, GC gc) {
   y_rand_square_data[number_of_squares] = '\0';
   number_of_squares--;
 
-  XClearWindow(dpy, win);
-  XFlush(dpy);
+  XClearWindow(tx->dpy, tx->win);
+  XFlush(tx->dpy);
 
   for (int i = 0; i < number_of_squares; i++) {
-    XFillRectangle(dpy, win, gc, x_rand_square_data[i], y_rand_square_data[i],
-                   square_width, square_height);
-    XFlush(dpy);
+    XFillRectangle(tx->dpy, tx->win, tx->gc, x_rand_square_data[i],
+                   y_rand_square_data[i], square_width, square_height);
+    XFlush(tx->dpy);
   }
 }
 
 int main(int argc, char** argv) {
+  txlock tx = {0};
   strcpy(name, txname());
   conf_analyzer(txname());
   verify_conf_args();
   srand(time(NULL));
 
-  Display* dpy;
-  Window win, root;
-  GC gc, wrong_passwd;
-  Font font;
-  XFontStruct* font_struct;
-  int screen;
-
   // if (getuid())
   //   die("TXlock must be run under root!");
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL)
+  if ((tx.dpy = XOpenDisplay(NULL)) == NULL)
     die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.override_redirect = True;
   attrs.background_pixel = bg_color;
-  root = DefaultRootWindow(dpy);
-  screen = DefaultScreen(dpy);
-  win = XCreateWindow(dpy, root, 0, 0, DisplayWidth(dpy, screen),
-                      DisplayHeight(dpy, screen), 0, DefaultDepth(dpy, screen),
-                      CopyFromParent, DefaultVisual(dpy, screen),
-                      CWOverrideRedirect | CWBackPixel, &attrs);
-  gc = XCreateGC(dpy, win, 0, NULL);
-  wrong_passwd = XCreateGC(dpy, win, 0, NULL);
+  tx.root = DefaultRootWindow(tx.dpy);
+  tx.screen = DefaultScreen(tx.dpy);
+  tx.win = XCreateWindow(tx.dpy, tx.root, 0, 0, DisplayWidth(tx.dpy, tx.screen),
+                         DisplayHeight(tx.dpy, tx.screen), 0,
+                         DefaultDepth(tx.dpy, tx.screen), CopyFromParent,
+                         DefaultVisual(tx.dpy, tx.screen),
+                         CWOverrideRedirect | CWBackPixel, &attrs);
+  tx.gc = XCreateGC(tx.dpy, tx.win, 0, NULL);
+  tx.wrong_passwd = XCreateGC(tx.dpy, tx.win, 0, NULL);
 
-  font_struct = XLoadQueryFont(dpy, "fixed");
+  tx.font_struct = XLoadQueryFont(tx.dpy, "fixed");
 
-  font = font_struct->fid;
-  XSetFont(dpy, wrong_passwd, font);
+  tx.font = tx.font_struct->fid;
+  XSetFont(tx.dpy, tx.wrong_passwd, tx.font);
 
-  XSetForeground(dpy, gc, square_color);
-  XSetFillStyle(dpy, gc, FillSolid);
+  XSetForeground(tx.dpy, tx.gc, square_color);
+  XSetFillStyle(tx.dpy, tx.gc, FillSolid);
 
-  XStoreName(dpy, win, "txlock");
-  XSelectInput(dpy, win, StructureNotifyMask | KeyPressMask | FocusChangeMask);
-  XMapWindow(dpy, win);
-  XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync, CurrentTime);
+  XStoreName(tx.dpy, tx.win, "txlock");
+  XSelectInput(tx.dpy, tx.win,
+               StructureNotifyMask | KeyPressMask | FocusChangeMask);
+  XMapWindow(tx.dpy, tx.win);
+  XGrabKeyboard(tx.dpy, tx.win, True, GrabModeAsync, GrabModeAsync,
+                CurrentTime);
 
   for (;;) {
     XEvent event;
-    XNextEvent(dpy, &event);
+    XNextEvent(tx.dpy, &event);
     printf("%s\n", user_input);
     switch (event.type) {
       case KeyPress:
         KeySym keysym = XLookupKeysym(&event.xkey, 0);
         if ((event.xkey.state & ControlMask) && keysym == XK_u) {
           number_of_squares = 1, user_input_length = 1;
-          purge_sq(dpy, win, gc);
+          purge_sq(&tx);
           break;
         }
         if (keysym > 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
           int x_rand_coordinates = randnum(
-                  (((DisplayWidth(dpy, screen) - 1270) >> 1) + 1270) - 100,
-                  (DisplayWidth(dpy, screen) - 1270) >> 1),
+                  (((DisplayWidth(tx.dpy, tx.screen) - 1270) >> 1) + 1270) -
+                      100,
+                  (DisplayWidth(tx.dpy, tx.screen) - 1270) >> 1),
               y_rand_coordinates = randnum(
-                  (((DisplayHeight(dpy, screen) - 720) >> 1) + 720) - 100,
-                  (DisplayHeight(dpy, screen) - 720) >> 1);
+                  (((DisplayHeight(tx.dpy, tx.screen) - 720) >> 1) + 720) - 100,
+                  (DisplayHeight(tx.dpy, tx.screen) - 720) >> 1);
           x_rand_square_data[number_of_squares] = x_rand_coordinates,
           y_rand_square_data[number_of_squares] = y_rand_coordinates;
-          XFillRectangle(dpy, win, gc, x_rand_coordinates, y_rand_coordinates,
-                         square_width, square_height);
-          XFlush(dpy);
+          XFillRectangle(tx.dpy, tx.win, tx.gc, x_rand_coordinates,
+                         y_rand_coordinates, square_width, square_height);
+          XFlush(tx.dpy);
 
           user_input[user_input_length++] = (char)keysym;
           user_input[user_input_length + 1] = '\0';
           number_of_squares++;
-          XFlush(dpy);
+          XFlush(tx.dpy);
         } else if (keysym == XK_BackSpace && user_input_length > 0) {
-          purge_sq(dpy, win, gc);
+          purge_sq(&tx);
         } else if (keysym == XK_Return) {
           if (verify_passwd(user_input) == 0) {
-            XCloseDisplay(dpy);
+            XCloseDisplay(tx.dpy);
             return EXIT_SUCCESS;
           }
         }
         break;
       case FocusOut:
-        XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync,
+        XGrabKeyboard(tx.dpy, tx.win, True, GrabModeAsync, GrabModeAsync,
                       CurrentTime);
         break;
     }
   }
 
-  XCloseDisplay(dpy);
+  XCloseDisplay(tx.dpy);
 
   return EXIT_SUCCESS;
 }

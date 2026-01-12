@@ -9,6 +9,16 @@
 
 #include "../core.h"
 
+typedef struct {
+  Display* dpy;
+  Window win, root;
+  GC gc;
+  XEvent event;
+  XFontStruct* font_struct;
+  XWindowAttributes attr;
+  int screen;
+} txdm;
+
 #define INPUT_LENGTH 512
 
 char user_input[INPUT_LENGTH] = {0};
@@ -60,37 +70,34 @@ char (*get_envs(int* count))[2][256] {
 }
 
 int main(void) {
-  Display* dpy;
-  Window win, root;
-  GC gc, wrong_passwd;
-  Font font;
-  XFontStruct* font_struct;
-  int screen;
+  txdm tx = {0};
 
-  if ((dpy = XOpenDisplay(NULL)) == NULL)
+  if ((tx.dpy = XOpenDisplay(NULL)) == NULL)
     die(__LINE__, "Failed to open X11 display");
 
   XSetWindowAttributes attrs;
   attrs.background_pixel = 0xffffff;
-  root = DefaultRootWindow(dpy);
-  screen = DefaultScreen(dpy);
-  win = XCreateWindow(dpy, root, 0, 0, DisplayWidth(dpy, screen),
-                      DisplayHeight(dpy, screen), 0, DefaultDepth(dpy, screen),
-                      CopyFromParent, DefaultVisual(dpy, screen),
-                      CWOverrideRedirect | CWBackPixel, &attrs);
-  gc = XCreateGC(dpy, win, 0, NULL);
-  font_struct = XQueryFont(dpy, XGContextFromGC(gc));
+  tx.root = DefaultRootWindow(tx.dpy);
+  tx.screen = DefaultScreen(tx.dpy);
+  tx.win = XCreateWindow(tx.dpy, tx.root, 0, 0, DisplayWidth(tx.dpy, tx.screen),
+                         DisplayHeight(tx.dpy, tx.screen), 0,
+                         DefaultDepth(tx.dpy, tx.screen), CopyFromParent,
+                         DefaultVisual(tx.dpy, tx.screen),
+                         CWOverrideRedirect | CWBackPixel, &attrs);
+  tx.gc = XCreateGC(tx.dpy, tx.win, 0, NULL);
+  tx.font_struct = XQueryFont(tx.dpy, XGContextFromGC(tx.gc));
 
-  XStoreName(dpy, win, "txdm");
+  XStoreName(tx.dpy, tx.win, "txdm");
   XSelectInput(
-      dpy, win,
+      tx.dpy, tx.win,
       StructureNotifyMask | ExposureMask | KeyPressMask | FocusChangeMask);
-  XMapWindow(dpy, win);
-  XGrabKeyboard(dpy, win, True, GrabModeAsync, GrabModeAsync, CurrentTime);
+  XMapWindow(tx.dpy, tx.win);
+  XGrabKeyboard(tx.dpy, tx.win, True, GrabModeAsync, GrabModeAsync,
+                CurrentTime);
 
   while (1) {
     XEvent event;
-    XNextEvent(dpy, &event);
+    XNextEvent(tx.dpy, &event);
     switch (event.type) {
         // case Expose:
         //   static int count;
@@ -101,10 +108,10 @@ int main(void) {
         //   int y = 100;
         //   for (int i = 0; i < count; i++) {
         //     printf("%d: %s\n", i, envs[i][0]);
-        //     XDrawString(dpy, win, gc, x, y, envs[i][0], strlen(envs[i][0]));
-        //     y += strhei(font_struct) + 1;
+        //     XDrawString(tx.dpy, tx.win, tx.gc, x, y, envs[i][0],
+        //     strlen(envs[i][0])); y += strhei(tx.font_struct) + 1;
         //   }
-        //   XFlush(dpy);
+        //   XFlush(tx.dpy);
         //   break;
 
       case KeyPress:
@@ -115,18 +122,20 @@ int main(void) {
           user_input[user_input_length + 1] = '\0';
           user_input_length++;
           printf("%s\n", user_input);
-          XClearWindow(dpy, win);
-          XDrawString(dpy, win, gc, 50, 50, user_input, user_input_length);
-          XFlush(dpy);
+          XClearWindow(tx.dpy, tx.win);
+          XDrawString(tx.dpy, tx.win, tx.gc, 50, 50, user_input,
+                      user_input_length);
+          XFlush(tx.dpy);
         } else if (keysym == XK_BackSpace && user_input_length > 0) {
           user_input[user_input_length - 1] = '\0';
           user_input_length--;
 
-          XClearWindow(dpy, win);
+          XClearWindow(tx.dpy, tx.win);
           printf("backspace: %s\n", user_input);
-          XFillRectangle(dpy, win, gc, 0, 0, width, 100);
-          XDrawString(dpy, win, gc, 50, 50, user_input, user_input_length);
-          XFlush(dpy);
+          XFillRectangle(tx.dpy, tx.win, tx.gc, 0, 0, width, 100);
+          XDrawString(tx.dpy, tx.win, tx.gc, 50, 50, user_input,
+                      user_input_length);
+          XFlush(tx.dpy);
         } else if (keysym == XK_Return) {
           int count;
           char (*envs)[2][256] = get_envs(&count);
@@ -148,11 +157,11 @@ int main(void) {
     int y = 100;
     for (int i = 0; i < count; i++) {
       printf("%d: %s\n", i, envs[i][0]);
-      XDrawString(dpy, win, gc, x, y, envs[i][0], strlen(envs[i][0]));
-      y += strhei(font_struct) + 1;
+      XDrawString(tx.dpy, tx.win, tx.gc, x, y, envs[i][0], strlen(envs[i][0]));
+      y += strhei(tx.font_struct) + 1;
     }
 
-    XFlush(dpy);
+    XFlush(tx.dpy);
   }
 
   return EXIT_SUCCESS;

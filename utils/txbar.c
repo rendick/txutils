@@ -10,6 +10,14 @@
 
 #include "../core.h"
 
+typedef struct {
+  Display* dpy;
+  Window win, root;
+  GC gc;
+  Font font;
+  XFontStruct* font_struct;
+} txwm;
+
 #define MAX_MODULES 50
 
 int number_of_modules = 0;
@@ -35,18 +43,19 @@ long current_time_in_secs() {
 // get_workspace_information() gives all required data: the number of workspaces
 // and the current workspace. Now all that remains is to implement its graphical
 // implementation.
-void get_workspace_information(Display* dpy, Window root) {
+void get_workspace_information(txwm* tx) {
   Atom net_number_of_workspaces =
-      XInternAtom(dpy, "_NET_NUMBER_OF_DESKTOPS", False);
-  Atom net_current_workspace = XInternAtom(dpy, "_NET_CURRENT_DESKTOP", False);
+      XInternAtom(tx->dpy, "_NET_NUMBER_OF_DESKTOPS", False);
+  Atom net_current_workspace =
+      XInternAtom(tx->dpy, "_NET_CURRENT_DESKTOP", False);
   Atom actual_type_return;
   int actual_format_return;
   unsigned long number_of_items, bytes_after_return;
   unsigned char* property_data = NULL;
 
   int number_of_workspaces = 0;
-  if (XGetWindowProperty(dpy, root, net_number_of_workspaces, 0, 1, False,
-                         XA_CARDINAL, &actual_type_return,
+  if (XGetWindowProperty(tx->dpy, tx->root, net_number_of_workspaces, 0, 1,
+                         False, XA_CARDINAL, &actual_type_return,
                          &actual_format_return, &number_of_items,
                          &bytes_after_return, &property_data) == 0 &&
       property_data) {
@@ -56,7 +65,7 @@ void get_workspace_information(Display* dpy, Window root) {
   }
 
   int current_workspace_position = 0;
-  if (XGetWindowProperty(dpy, root, net_current_workspace, 0, 1, False,
+  if (XGetWindowProperty(tx->dpy, tx->root, net_current_workspace, 0, 1, False,
                          XA_CARDINAL, &actual_type_return,
                          &actual_format_return, &number_of_items,
                          &bytes_after_return, &property_data) == 0 &&
@@ -92,21 +101,21 @@ void update_modules() {
   }
 }
 
-void draw_modules(Display* dpy, Window win, GC gc, XFontStruct* font_struct) {
-  int free_screen_width = DisplayWidth(dpy, DefaultScreen(dpy));
+void draw_modules(txwm* tx) {
+  int free_screen_width = DisplayWidth(tx->dpy, DefaultScreen(tx->dpy));
   for (int i = 0; i < number_of_modules; i++) {
-    XDrawString(dpy, win, gc,
-                free_screen_width - strwid(modules[i].output, font_struct), 16,
-                modules[i].output, strlen(modules[i].output));
-    free_screen_width -= strwid(modules[i].output, font_struct);
+    XDrawString(tx->dpy, tx->win, tx->gc,
+                free_screen_width - strwid(modules[i].output, tx->font_struct),
+                16, modules[i].output, strlen(modules[i].output));
+    free_screen_width -= strwid(modules[i].output, tx->font_struct);
 
     if (i != number_of_modules - 1) {
-      XDrawString(dpy, win, gc,
-                  free_screen_width - strwid(separator, font_struct), 16,
+      XDrawString(tx->dpy, tx->win, tx->gc,
+                  free_screen_width - strwid(separator, tx->font_struct), 16,
                   separator, strlen(separator));
-      free_screen_width -= strwid(separator, font_struct);
+      free_screen_width -= strwid(separator, tx->font_struct);
     }
-    XFlush(dpy);
+    XFlush(tx->dpy);
   }
 }
 
@@ -152,54 +161,50 @@ void parse_modules() {
 }
 
 int main(int argc, char** argv) {
+  txwm tx = {0};
   strcpy(name, txname());
   conf_analyzer(txname());
 
-  Display* dpy;
-  Window win, root;
-  GC gc;
-  Font font;
-  XFontStruct* font_struct;
-
-  if ((dpy = XOpenDisplay(NULL)) == NULL)
+  if ((tx.dpy = XOpenDisplay(NULL)) == NULL)
     die(__LINE__, "Failed to open X11 display");
 
-  root = DefaultRootWindow(dpy);
-  win = XCreateSimpleWindow(dpy, root, 0, 0, 1, 22, 0, 0, background.extra);
+  tx.root = DefaultRootWindow(tx.dpy);
+  tx.win =
+      XCreateSimpleWindow(tx.dpy, tx.root, 0, 0, 1, 22, 0, 0, background.extra);
 
-  Atom wm_window_type = XInternAtom(dpy, "_NET_WM_WINDOW_TYPE", False);
+  Atom wm_window_type = XInternAtom(tx.dpy, "_NET_WM_WINDOW_TYPE", False);
   Atom wm_window_type_dock =
-      XInternAtom(dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
-  XChangeProperty(dpy, win, wm_window_type, XA_ATOM, 32, PropModeReplace,
+      XInternAtom(tx.dpy, "_NET_WM_WINDOW_TYPE_DOCK", False);
+  XChangeProperty(tx.dpy, tx.win, wm_window_type, XA_ATOM, 32, PropModeReplace,
                   (unsigned char*)&wm_window_type_dock, 1);
 
-  gc = XCreateGC(dpy, win, 0, NULL);
+  tx.gc = XCreateGC(tx.dpy, tx.win, 0, NULL);
 
-  font_struct = XLoadQueryFont(dpy, "fixed");
+  tx.font_struct = XLoadQueryFont(tx.dpy, "fixed");
 
-  font = font_struct->fid;
-  XSetFont(dpy, gc, font);
+  tx.font = tx.font_struct->fid;
+  XSetFont(tx.dpy, tx.gc, tx.font);
 
-  XSetForeground(dpy, gc, foreground.extra);
+  XSetForeground(tx.dpy, tx.gc, foreground.extra);
 
-  XSelectInput(dpy, win, StructureNotifyMask | ExposureMask);
-  XMapWindow(dpy, win);
+  XSelectInput(tx.dpy, tx.win, StructureNotifyMask | ExposureMask);
+  XMapWindow(tx.dpy, tx.win);
 
   parse_modules();
 
   long last_use = 0;
   for (;;) {
-    XFlush(dpy);
+    XFlush(tx.dpy);
 
     int now = current_time_in_secs();
     if (now != last_use) {
-      XClearWindow(dpy, win);
+      XClearWindow(tx.dpy, tx.win);
       last_use = now;
     }
 
     update_modules();
-    get_workspace_information(dpy, root);
-    draw_modules(dpy, win, gc, font_struct);
+    get_workspace_information(&tx);
+    draw_modules(&tx);
     printf("%ld\n", current_time_in_secs());
 
     usleep(200 * 1000);  // milliseconds * 1000 (milliseconds to microseconds)
@@ -210,9 +215,9 @@ int main(int argc, char** argv) {
     free(modules[i].output);
   }
 
-  XFreeGC(dpy, gc);
-  XDestroySubwindows(dpy, win);
-  XCloseDisplay(dpy);
+  XFreeGC(tx.dpy, tx.gc);
+  XDestroySubwindows(tx.dpy, tx.win);
+  XCloseDisplay(tx.dpy);
 
   return EXIT_SUCCESS;
 }
