@@ -16,7 +16,7 @@ typedef struct {
   GC gc;
   Font font;
   XFontStruct* font_struct;
-} txwm;
+} txbar;
 
 #define MAX_MODULES 50
 
@@ -43,7 +43,7 @@ long current_time_in_secs() {
 // get_workspace_information() gives all required data: the number of workspaces
 // and the current workspace. Now all that remains is to implement its graphical
 // implementation.
-void get_workspace_information(txwm* tx) {
+void get_workspace_information(txbar* tx) {
   Atom net_number_of_workspaces =
       XInternAtom(tx->dpy, "_NET_NUMBER_OF_DESKTOPS", False);
   Atom net_current_workspace =
@@ -72,7 +72,23 @@ void get_workspace_information(txwm* tx) {
       property_data) {
     current_workspace_position = *(int*)property_data + 1;
     XFree(property_data);
+    char buf[100];
+    sprintf(buf, "Current workspace: %d", current_workspace_position);
+
     printf("Current workspace: %d\n", current_workspace_position);
+    int workspace_initial_x = 2;
+    for (int i = 1; i <= number_of_workspaces; i++) {
+      char buf[32];
+      sprintf(buf, "%d", i);
+      if (i == current_workspace_position)
+        XDrawRectangle(tx->dpy, tx->win, tx->gc, workspace_initial_x, 10,
+                       strwid(buf, tx->font_struct), 10);
+
+      XDrawString(tx->dpy, tx->win, tx->gc, workspace_initial_x, 10, buf,
+                  strlen(buf));
+      workspace_initial_x += strwid(buf, tx->font_struct) + 3;
+      buf[0] = '\0';
+    }
   }
 }
 
@@ -101,7 +117,7 @@ void update_modules() {
   }
 }
 
-void draw_modules(txwm* tx) {
+void draw_modules(txbar* tx) {
   int free_screen_width = DisplayWidth(tx->dpy, DefaultScreen(tx->dpy));
   for (int i = 0; i < number_of_modules; i++) {
     XDrawString(tx->dpy, tx->win, tx->gc,
@@ -161,9 +177,10 @@ void parse_modules() {
 }
 
 int main(int argc, char** argv) {
-  txwm tx = {0};
-  strcpy(name, txname());
-  conf_analyzer(txname());
+  txbar tx = {0};
+  // strcpy(name, txname());
+  // conf_analyzer(txname());
+  tx_init();
 
   if ((tx.dpy = XOpenDisplay(NULL)) == NULL)
     die(__LINE__, "Failed to open X11 display");
