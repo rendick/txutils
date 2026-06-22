@@ -59,7 +59,7 @@ void get_workspace_information(txbar* tx) {
                          &actual_format_return, &number_of_items,
                          &bytes_after_return, &property_data) == 0 &&
       property_data) {
-    number_of_workspaces = *(int*)property_data;
+    number_of_workspaces = ((unsigned long *)property_data)[0];
     XFree(property_data);
     printf("Number of workspaces: %d\n", number_of_workspaces);
   }
@@ -109,6 +109,7 @@ void update_modules() {
       char buffer[1024];
       while (fgets(buffer, sizeof(buffer), run_command)) {
         if (strlen(buffer) > 0) buffer[strlen(buffer) - 1] = '\0';
+	free(modules[i].output);
         modules[i].output = strdup(buffer);
       }
       pclose(run_command);
@@ -235,6 +236,7 @@ int main(int argc, char** argv) {
   XFreeGC(tx.dpy, tx.gc);
   XDestroySubwindows(tx.dpy, tx.win);
   XCloseDisplay(tx.dpy);
+  memset(modules, 0, sizeof(modules));
 
   return EXIT_SUCCESS;
 }

@@ -124,6 +124,7 @@ void display_programs(txstart* tx, char* first_program) {
       n++;
     }
   }
+  closedir(dr);
 }
 
 void run_program(char* name) {
@@ -144,9 +145,10 @@ void run_program(char* name) {
 
 int main(int argc, char** argv) {
   txstart tx = {0};
-  strcpy(name, txname());
-  conf_analyzer(txname());
-  verify_conf_args();
+  // strcpy(name, txname());
+  // conf_analyzer(txname());
+  // verify_conf_args();
+  tx_init();
 
   if ((tx.dpy = XOpenDisplay(NULL)) == NULL)
     die(__LINE__, "Failed to open X11 display");
@@ -160,6 +162,7 @@ int main(int argc, char** argv) {
                          DefaultDepth(tx.dpy, tx.screen), CopyFromParent,
                          DefaultVisual(tx.dpy, tx.screen),
                          CWOverrideRedirect | CWBackPixel, &attrs);
+  printf("log: %d %d\n", window.width, window.heigth);
 
   tx.gc = XCreateGC(tx.dpy, tx.win, 0, NULL);
   if (!tx.gc) die(__LINE__, "Failed to craete GC");

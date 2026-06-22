@@ -67,9 +67,11 @@ void purge_sq(txlock* tx) {
 
 int main(int argc, char** argv) {
   txlock tx = {0};
-  strcpy(name, txname());
-  conf_analyzer(txname());
-  verify_conf_args();
+  // strcpy(name, txname());
+  // conf_analyzer(txname());
+  // verify_conf_args();
+  tx_init();
+
   srand(time(NULL));
 
   // if (getuid())
@@ -140,8 +142,12 @@ int main(int argc, char** argv) {
           purge_sq(&tx);
         } else if (keysym == XK_Return) {
           if (verify_passwd(user_input) == 0) {
-            XCloseDisplay(tx.dpy);
-            return EXIT_SUCCESS;
+  		XCloseDisplay(tx.dpy);
+  		XFreeGC(tx.dpy, tx.gc);
+  		XFreeGC(tx.dpy, tx.wrong_passwd);
+  		XFreeFont(tx.dpy, tx.font_struct);
+
+            	return EXIT_SUCCESS;
           }
         }
         break;
@@ -153,6 +159,9 @@ int main(int argc, char** argv) {
   }
 
   XCloseDisplay(tx.dpy);
+  XFreeGC(tx.dpy, tx.gc);
+  XFreeGC(tx.dpy, tx.wrong_passwd);
+  XFreeFont(tx.dpy, tx.font_struct);
 
   return EXIT_SUCCESS;
 }
