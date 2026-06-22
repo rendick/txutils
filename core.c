@@ -80,6 +80,7 @@ void verify_conf_args() {
     Display* dpy = XOpenDisplay(NULL);
     window_width = 25;
     window_height = DisplayWidth(dpy, DefaultScreen(dpy));
+    XCloseDisplay(dpy);
   }
 }
 
@@ -210,4 +211,11 @@ void conf_analyzer(char* util_name) {
   }
 
   fclose(rf);
+}
+
+void tx_init() {
+  char* tmp = txname();
+  strcpy(name, tmp);
+  conf_analyzer(tmp);
+  verify_conf_args();
 }

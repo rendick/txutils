@@ -55,4 +55,6 @@ char* txname();
 
 void conf_analyzer(char* util_name);
 
+void tx_init();
+
 #endif
