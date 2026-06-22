@@ -1,8 +1,8 @@
 CC=gcc
-CFLAGS=-g -Wall -Wextra -fsanitize=signed-integer-overflow
+CFLAGS=-g -Wall -Wextra -fsanitize=signed-integer-overflow,address,undefined,leak -pedantic-errors -fstack-protector
 CLIBS=-lX11 -lcrypt
 
-PROGRAMS = txstart txbar txlock
+PROGRAMS = txstart txbar txlock txdm txwm
 BUILD_DIR = build
 
 TARGETS = $(addprefix $(BUILD_DIR)/, $(PROGRAMS))
@@ -19,6 +19,12 @@ $(BUILD_DIR)/txbar: utils/txbar.c core.c
 	$(CC) $(CFLAGS) -I. $^ -o $@ $(CLIBS)
 
 $(BUILD_DIR)/txlock: utils/txlock.c core.c
+	$(CC) $(CFLAGS) -I. $^ -o $@ $(CLIBS)
+
+$(BUILD_DIR)/txdm: utils/txdm.c core.c
+	$(CC) $(CFLAGS) -I. $^ -o $@ $(CLIBS)
+
+$(BUILD_DIR)/txwm: utils/txwm.c core.c
 	$(CC) $(CFLAGS) -I. $^ -o $@ $(CLIBS)
 
 clean:
