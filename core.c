@@ -48,7 +48,7 @@ void die(int line_number, const char* msg, ...) {
   va_start(vargs, msg);
   fprintf(stderr, "%d: ", line_number);
   vfprintf(stderr, msg, vargs);
-  fprintf(stderr, ".\n");
+  fprintf(stderr, "\n");
   va_end(vargs);
   exit(EXIT_FAILURE);
 }
@@ -177,6 +177,9 @@ void conf_analyzer(char* util_name) {
 
   FILE* rf;
   rf = fopen(path_to_config, "r");
+  if (rf == NULL) {
+   die(__LINE__, "Failed to find %s", path_to_config);
+  }
 
   while (fgets(output, 4096, rf)) {
     char option_type[100];
