@@ -212,12 +212,18 @@ int main(int argc, char** argv) {
           XFlush(tx.dpy);
 
           break;
-        }
+        } 
 
         if (keysym >= 32 && keysym < 127 && user_input_length < INPUT_LENGTH) {
+	if ((tx.event.xkey.state & ShiftMask)) {
+          user_input[user_input_length] = (char)keysym - 32;
+          user_input[user_input_length + 1] = '\0';
+          user_input_length++;
+	} else {
           user_input[user_input_length] = (char)keysym;
           user_input[user_input_length + 1] = '\0';
           user_input_length++;
+	}
 
           XClearWindow(tx.dpy, tx.win);
           XDrawString(tx.dpy, tx.win, tx.gc, 10,
